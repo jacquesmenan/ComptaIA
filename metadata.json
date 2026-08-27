@@ -1,0 +1,6 @@
+{
+  "name": "ComptaAI - Expert Comptable Autonome",
+  "description": "Application d'automatisation comptable et d'analyse financière en temps réel avec IA, alertes prédictives de trésorerie sur 30 jours, notifications d'échéances fiscales TVA et URSSAF, saisie automatique des pièces justificatives, FEC et multi-normes PCG/SYSCOHADA/IFRS.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

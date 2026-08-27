@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Ledger Document and AI Spark -->
+  <g transform="translate(106, 96)">
+    <!-- Main Card -->
+    <rect x="0" y="30" width="220" height="280" rx="24" fill="#ffffff" opacity="0.95"/>
+    <rect x="30" y="70" width="160" height="16" rx="8" fill="#e2e8f0"/>
+    <rect x="30" y="105" width="110" height="12" rx="6" fill="#cbd5e1"/>
+    <rect x="30" y="130" width="160" height="12" rx="6" fill="#e2e8f0"/>
+    
+    <!-- Ledger Rows -->
+    <rect x="30" y="165" width="80" height="10" rx="5" fill="#94a3b8"/>
+    <rect x="130" y="165" width="60" height="10" rx="5" fill="#38bdf8"/>
+    <rect x="30" y="190" width="70" height="10" rx="5" fill="#94a3b8"/>
+    <rect x="130" y="190" width="60" height="10" rx="5" fill="#10b981"/>
+    <rect x="30" y="215" width="90" height="10" rx="5" fill="#94a3b8"/>
+    <rect x="130" y="215" width="60" height="10" rx="5" fill="#6366f1"/>
+    
+    <line x1="30" y1="245" x2="190" y2="245" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="120" y="260" width="70" height="18" rx="6" fill="#0284c7"/>
+
+    <!-- AI Spark Symbol -->
+    <g transform="translate(190, 0)">
+      <circle cx="60" cy="60" r="52" fill="url(#acc)"/>
+      <path d="M60 28 L66 48 L86 54 L66 60 L60 80 L54 60 L34 54 L54 48 Z" fill="#ffffff"/>
+      <circle cx="86" cy="28" r="4" fill="#ffffff"/>
+      <circle cx="34" cy="80" r="4" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,37 @@
+{
+  "name": "ComptaAI - Expert Comptable Autonome",
+  "short_name": "ComptaAI",
+  "description": "Automatisation comptable en temps réel, saisie IA des factures et analyse financière",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Scanner une facture",
+      "url": "/?action=scan",
+      "description": "Scanner ou importer un justificatif"
+    },
+    {
+      "name": "Consulter le Bilan",
+      "url": "/?action=bilan",
+      "description": "Voir le Bilan et Compte de Résultat"
+    }
+  ]
+}
