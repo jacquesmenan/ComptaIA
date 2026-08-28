@@ -3,6 +3,7 @@ import { Navbar } from "./components/Navbar";
 import { DashboardView } from "./components/DashboardView";
 import { AutoScanView } from "./components/AutoScanView";
 import { JournalView } from "./components/JournalView";
+import { InvoicingView } from "./components/InvoicingView";
 import { FinancialStatementsView } from "./components/FinancialStatementsView";
 import { TaxComplianceView } from "./components/TaxComplianceView";
 import { BankReconcileView } from "./components/BankReconcileView";
@@ -14,22 +15,28 @@ import {
   sampleTransactions,
   sampleCompany,
   sampleBankFeed,
+  sampleInvoices,
 } from "./data/initialData";
 import {
   CompanyProfile,
   JournalTransaction,
   BankTransaction,
   AccountingStandard,
+  ClientInvoice,
 } from "./types";
 import {
   calculateFinancialKPIs,
   detectAccountingAnomalies,
 } from "./lib/accountingEngine";
+import { convertInvoiceToJournalTransaction } from "./lib/invoicingEngine";
 import { Smartphone, Monitor } from "lucide-react";
 
 export default function App() {
   // State initialization
   const [activeTab, setActiveTab] = useState<string>("dashboard");
+  const [journalSearchFilter, setJournalSearchFilter] = useState<string>("");
+  const [journalCodeFilter, setJournalCodeFilter] = useState<string>("ALL");
+
   const [company, setCompany] = useState<CompanyProfile>(() => {
     const saved = localStorage.getItem("compta_company");
     return saved ? JSON.parse(saved) : sampleCompany;
@@ -38,6 +45,11 @@ export default function App() {
   const [transactions, setTransactions] = useState<JournalTransaction[]>(() => {
     const saved = localStorage.getItem("compta_transactions");
     return saved ? JSON.parse(saved) : sampleTransactions;
+  });
+
+  const [invoices, setInvoices] = useState<ClientInvoice[]>(() => {
+    const saved = localStorage.getItem("compta_invoices");
+    return saved ? JSON.parse(saved) : sampleInvoices;
   });
 
   const [bankFeed, setBankFeed] = useState<BankTransaction[]>(() => {
@@ -64,6 +76,10 @@ export default function App() {
   }, [transactions]);
 
   useEffect(() => {
+    localStorage.setItem("compta_invoices", JSON.stringify(invoices));
+  }, [invoices]);
+
+  useEffect(() => {
     localStorage.setItem("compta_bankfeed", JSON.stringify(bankFeed));
   }, [bankFeed]);
 
@@ -87,6 +103,46 @@ export default function App() {
 
   const handleDeleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleSaveInvoice = (savedInvoice: ClientInvoice) => {
+    setInvoices((prev) => {
+      const idx = prev.findIndex((inv) => inv.id === savedInvoice.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = savedInvoice;
+        return next;
+      }
+      return [savedInvoice, ...prev];
+    });
+  };
+
+  const handleDeleteInvoice = (id: string) => {
+    setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+  };
+
+  const handleBookInvoiceToJournal = (invoice: ClientInvoice) => {
+    const newTx = convertInvoiceToJournalTransaction(invoice, company);
+    // Add transaction to journal
+    setTransactions((prev) => [newTx, ...prev]);
+    // Mark invoice as booked
+    setInvoices((prev) =>
+      prev.map((inv) =>
+        inv.id === invoice.id
+          ? {
+              ...inv,
+              isBookedInJournal: true,
+              journalTransactionId: newTx.id,
+            }
+          : inv
+      )
+    );
+  };
+
+  const handleNavigateToJournalWithSearch = (search: string, journalCode = "VE") => {
+    setJournalSearchFilter(search);
+    setJournalCodeFilter(journalCode);
+    setActiveTab("journal");
   };
 
   const handleStandardChange = (standard: AccountingStandard) => {
@@ -183,12 +239,25 @@ export default function App() {
                     onNavigateTab={setActiveTab}
                   />
                 )}
+                {(activeTab === "invoicing" || activeTab === "invoices" || activeTab === "facturation") && (
+                  <InvoicingView
+                    invoices={invoices}
+                    company={company}
+                    onSaveInvoice={handleSaveInvoice}
+                    onDeleteInvoice={handleDeleteInvoice}
+                    onBookToJournal={handleBookInvoiceToJournal}
+                    onNavigateToJournal={handleNavigateToJournalWithSearch}
+                  />
+                )}
                 {activeTab === "journal" && (
                   <JournalView
                     transactions={transactions}
                     company={company}
                     onAddTransaction={handleAddTransaction}
                     onDeleteTransaction={handleDeleteTransaction}
+                    initialSearchQuery={journalSearchFilter}
+                    initialJournalFilter={journalCodeFilter}
+                    onNavigateTab={setActiveTab}
                   />
                 )}
                 {activeTab === "statements" && (
@@ -250,12 +319,25 @@ export default function App() {
                 onNavigateTab={setActiveTab}
               />
             )}
+            {(activeTab === "invoicing" || activeTab === "invoices" || activeTab === "facturation") && (
+              <InvoicingView
+                invoices={invoices}
+                company={company}
+                onSaveInvoice={handleSaveInvoice}
+                onDeleteInvoice={handleDeleteInvoice}
+                onBookToJournal={handleBookInvoiceToJournal}
+                onNavigateToJournal={handleNavigateToJournalWithSearch}
+              />
+            )}
             {activeTab === "journal" && (
               <JournalView
                 transactions={transactions}
                 company={company}
                 onAddTransaction={handleAddTransaction}
                 onDeleteTransaction={handleDeleteTransaction}
+                initialSearchQuery={journalSearchFilter}
+                initialJournalFilter={journalCodeFilter}
+                onNavigateTab={setActiveTab}
               />
             )}
             {activeTab === "statements" && (

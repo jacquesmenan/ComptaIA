@@ -82,6 +82,76 @@ export interface JournalTransaction {
   exchangeGainOrLoss?: number; // Gain (+) or Loss (-) de change
 }
 
+export type InvoiceStatus = "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED";
+
+export type InvoiceDocType = "INVOICE" | "QUOTE" | "CREDIT_NOTE";
+
+export interface InvoiceClient {
+  id?: string;
+  name: string;
+  contactName?: string;
+  email: string;
+  phone?: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  country: string;
+  siren?: string;
+  vatNumber?: string;
+}
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit?: string; // "heure", "jour", "forfait", "unité", "licence", "mois"
+  unitPriceHT: number;
+  vatRate: number; // e.g. 20, 10, 5.5, 0, 18
+  discountPct?: number; // e.g. 0, 5, 10%
+  amountHT: number; // (qty * unitPriceHT) * (1 - discount/100)
+  amountTVA: number; // amountHT * (vatRate / 100)
+  amountTTC: number; // amountHT + amountTVA
+  accountCode?: string; // e.g. "706000" for services or "707000" for goods
+}
+
+export interface InvoiceTaxSummary {
+  vatRate: number;
+  baseAmountHT: number;
+  taxAmount: number;
+}
+
+export interface ClientInvoice {
+  id: string;
+  number: string; // e.g. "FAC-CLI-2026-012"
+  type: InvoiceDocType; // "INVOICE" | "QUOTE" | "CREDIT_NOTE"
+  date: string; // YYYY-MM-DD
+  dueDate: string; // YYYY-MM-DD
+  client: InvoiceClient;
+  items: InvoiceLineItem[];
+  currency: CurrencyCode | string; // "EUR", "USD", "XOF", "GBP", "CHF"
+  exchangeRate?: number; // Rate against company base currency if foreign
+  totalBrutHT: number;
+  totalDiscount: number;
+  totalHT: number;
+  totalTVA: number;
+  totalTTC: number;
+  taxesSummary: InvoiceTaxSummary[];
+  status: InvoiceStatus;
+  paymentMethod: "VIREMENT" | "CARTE" | "PRELEVEMENT" | "CHEQUE" | "ESPECES";
+  paymentTerms: string; // e.g. "Paiement à 30 jours", "À réception", "Comptant"
+  notes?: string;
+  legalNotice?: string;
+  bankDetails?: {
+    bankName: string;
+    iban: string;
+    bic: string;
+  };
+  journalTransactionId?: string; // Linked JournalTransaction ID in JournalView
+  isBookedInJournal: boolean; // Has it generated an entry in Journal des Ventes (VE)?
+  createdAt: string;
+  paidAt?: string;
+}
+
 export interface BankTransaction {
   id: string;
   date: string;

@@ -14,6 +14,7 @@ import {
   ScanLine,
   Bell,
   Sliders,
+  FileText,
 } from "lucide-react";
 import { AccountingStandard, CompanyProfile } from "../types";
 
@@ -63,6 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: "dashboard", label: "Tableau de Bord", icon: PieChart },
+    { id: "invoicing", label: "Facturation", icon: FileText },
     { id: "scan", label: "Scanner & Saisie IA", icon: ScanLine, highlight: true },
     { id: "journal", label: "Journal & Grand Livre", icon: FileSpreadsheet },
     { id: "statements", label: "Bilan & P&L", icon: Scale },

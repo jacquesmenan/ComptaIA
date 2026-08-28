@@ -31,6 +31,9 @@ interface JournalViewProps {
   company: CompanyProfile;
   onAddTransaction: (tx: JournalTransaction) => void;
   onDeleteTransaction: (id: string) => void;
+  initialSearchQuery?: string;
+  initialJournalFilter?: string;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const JournalView: React.FC<JournalViewProps> = ({
@@ -38,12 +41,24 @@ export const JournalView: React.FC<JournalViewProps> = ({
   company,
   onAddTransaction,
   onDeleteTransaction,
+  initialSearchQuery = "",
+  initialJournalFilter = "ALL",
+  onNavigateTab,
 }) => {
-  const [selectedJournal, setSelectedJournal] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedJournal, setSelectedJournal] = useState<string>(initialJournalFilter);
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [viewMode, setViewMode] = useState<"JOURNAL" | "GRAND_LIVRE">("JOURNAL");
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [exportToast, setExportToast] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (initialSearchQuery) {
+      setSearchQuery(initialSearchQuery);
+    }
+    if (initialJournalFilter) {
+      setSelectedJournal(initialJournalFilter);
+    }
+  }, [initialSearchQuery, initialJournalFilter]);
 
   // Manual Entry Form State
   const [manualDate, setManualDate] = useState(new Date().toISOString().split("T")[0]);
@@ -343,6 +358,17 @@ export const JournalView: React.FC<JournalViewProps> = ({
             <FileJson className="w-4 h-4 text-emerald-400" />
             <span>Sauvegarde JSON</span>
           </button>
+          {onNavigateTab && (
+            <button
+              type="button"
+              onClick={() => onNavigateTab("invoicing")}
+              className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+              title="Accéder au module Facturation & Devis Clients"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Facturation Clients</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleExportFEC}

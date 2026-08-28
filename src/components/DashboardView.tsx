@@ -208,11 +208,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => handleNavigate("invoicing")}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-lg shadow-indigo-600/25 flex items-center gap-2 transition cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Créer une facture</span>
+            </button>
+            <button
+              type="button"
               onClick={() => handleNavigate("scan")}
-              className="bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-sky-500/25 flex items-center gap-2 transition cursor-pointer"
+              className="bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-lg shadow-sky-500/25 flex items-center gap-2 transition cursor-pointer"
             >
               <ScanLine className="w-4 h-4" />
-              <span>Scanner une facture</span>
+              <span>Scanner une pièce</span>
             </button>
             <button
               type="button"
