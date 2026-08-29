@@ -52,9 +52,10 @@ interface InvoicingViewProps {
   onSaveInvoice: (invoice: ClientInvoice) => void;
   onDeleteInvoice: (id: string) => void;
   onBookToJournal: (invoice: ClientInvoice) => void;
-  onNavigateTab: (tab: string, searchFilter?: string) => void;
+  onNavigateTab?: (tab: string, searchFilter?: string) => void;
+  onNavigateToJournal?: (tab: string, searchFilter?: string) => void;
   company: CompanyProfile;
-  transactions: JournalTransaction[];
+  transactions?: JournalTransaction[];
 }
 
 export const InvoicingView: React.FC<InvoicingViewProps> = ({
@@ -63,9 +64,18 @@ export const InvoicingView: React.FC<InvoicingViewProps> = ({
   onDeleteInvoice,
   onBookToJournal,
   onNavigateTab,
+  onNavigateToJournal,
   company,
-  transactions,
+  transactions = [],
 }) => {
+  const handleNavigate = (tab: string, searchFilter?: string) => {
+    if (typeof onNavigateTab === "function") {
+      onNavigateTab(tab, searchFilter);
+    } else if (typeof onNavigateToJournal === "function") {
+      onNavigateToJournal(tab, searchFilter);
+    }
+  };
+
   const [activeSubTab, setActiveSubTab] = useState<"ALL" | "INVOICE" | "QUOTE" | "PAID" | "UNBOOKED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -477,7 +487,7 @@ export const InvoicingView: React.FC<InvoicingViewProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => onNavigateTab("journal", "VE")}
+            onClick={() => handleNavigate("journal", "VE")}
             className="text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 text-[11px] cursor-pointer"
           >
             <span>Accéder directement au Journal des Ventes (VE)</span>
@@ -785,7 +795,7 @@ export const InvoicingView: React.FC<InvoicingViewProps> = ({
                       {inv.isBookedInJournal ? (
                         <button
                           type="button"
-                          onClick={() => onNavigateTab("journal", inv.number)}
+                          onClick={() => handleNavigate("journal", inv.number)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition cursor-pointer"
                           title="Cliquer pour voir l'écriture dans le Journal des Ventes"
                         >

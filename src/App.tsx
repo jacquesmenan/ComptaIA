@@ -243,9 +243,11 @@ export default function App() {
                   <InvoicingView
                     invoices={invoices}
                     company={company}
+                    transactions={transactions}
                     onSaveInvoice={handleSaveInvoice}
                     onDeleteInvoice={handleDeleteInvoice}
                     onBookToJournal={handleBookInvoiceToJournal}
+                    onNavigateTab={handleNavigateToJournalWithSearch}
                     onNavigateToJournal={handleNavigateToJournalWithSearch}
                   />
                 )}
@@ -323,9 +325,11 @@ export default function App() {
               <InvoicingView
                 invoices={invoices}
                 company={company}
+                transactions={transactions}
                 onSaveInvoice={handleSaveInvoice}
                 onDeleteInvoice={handleDeleteInvoice}
                 onBookToJournal={handleBookInvoiceToJournal}
+                onNavigateTab={handleNavigateToJournalWithSearch}
                 onNavigateToJournal={handleNavigateToJournalWithSearch}
               />
             )}

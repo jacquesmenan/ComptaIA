@@ -192,7 +192,8 @@ export function detectAccountingAnomalies(transactions: JournalTransaction[]) {
  */
 export function generateFEC(
   transactions: JournalTransaction[],
-  company: CompanyProfile
+  company: CompanyProfile,
+  delimiter: string = "\t"
 ): string {
   const headers = [
     "JournalCode",
@@ -215,7 +216,7 @@ export function generateFEC(
     "Idevise",
   ];
 
-  const rows: string[] = [headers.join("\t")];
+  const rows: string[] = [headers.join(delimiter)];
   const baseCurrency = normalizeCurrencyCode(company.currency);
 
   let ecritureCount = 1;
@@ -269,12 +270,120 @@ export function generateFEC(
         montantDeviseStr,
         ideviseStr,
       ];
-      rows.push(row.join("\t"));
+      rows.push(row.join(delimiter));
     });
     ecritureCount++;
   });
 
   return rows.join("\r\n");
+}
+
+/**
+ * Generate standard FEC formatted as a CSV file with UTF-8 BOM,
+ * semicolon (;) or comma delimiters, and escaped cells for universal Excel / Tax software compatibility.
+ */
+export function generateFECCsv(
+  transactions: JournalTransaction[],
+  company: CompanyProfile,
+  delimiter: string = ";"
+): string {
+  const headers = [
+    "JournalCode",
+    "JournalLib",
+    "EcritureNum",
+    "EcritureDate",
+    "CompteNum",
+    "CompteLib",
+    "CompAuxNum",
+    "CompAuxLib",
+    "PieceRef",
+    "PieceDate",
+    "EcritureLib",
+    "Debit",
+    "Credit",
+    "EcritureLet",
+    "DateLet",
+    "ValidDate",
+    "Montantdevise",
+    "Idevise",
+  ];
+
+  const escapeCell = (val: string | number | undefined | null): string => {
+    if (val === undefined || val === null) return "";
+    const str = String(val);
+    if (str.includes(delimiter) || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rows: string[] = [headers.map(escapeCell).join(delimiter)];
+  const baseCurrency = normalizeCurrencyCode(company.currency);
+
+  let ecritureCount = 1;
+  transactions.forEach((tx) => {
+    const formattedDate = tx.date.replace(/-/g, "");
+    const isForeign = tx.isForeignCurrency || (tx.currency && normalizeCurrencyCode(tx.currency) !== baseCurrency);
+    const foreignCode = tx.currency ? normalizeCurrencyCode(tx.currency) : baseCurrency;
+
+    tx.lines.forEach((line) => {
+      let montantDeviseStr = "";
+      let ideviseStr = baseCurrency;
+
+      if (isForeign) {
+        ideviseStr = foreignCode;
+        if (line.originalAmountDebit !== undefined && line.originalAmountDebit > 0) {
+          montantDeviseStr = line.originalAmountDebit.toFixed(2).replace(".", ",");
+        } else if (line.originalAmountCredit !== undefined && line.originalAmountCredit > 0) {
+          montantDeviseStr = line.originalAmountCredit.toFixed(2).replace(".", ",");
+        } else if (tx.exchangeRate && tx.exchangeRate > 0) {
+          const valInForeign = (line.debit > 0 ? line.debit : line.credit) / tx.exchangeRate;
+          montantDeviseStr = valInForeign.toFixed(2).replace(".", ",");
+        }
+      }
+
+      const journalName =
+        tx.journalCode === "AC"
+          ? "Journal des Achats"
+          : tx.journalCode === "VE"
+          ? "Journal des Ventes"
+          : tx.journalCode === "BQ"
+          ? "Journal de Banque"
+          : "Opérations Diverses";
+
+      const compAuxNum =
+        line.accountCode.startsWith("411") || line.accountCode.startsWith("401")
+          ? tx.partnerName.slice(0, 10).toUpperCase().replace(/[^A-Z0-9]/g, "")
+          : "";
+
+      const row = [
+        escapeCell(tx.journalCode),
+        escapeCell(journalName),
+        escapeCell(`ECR-${String(ecritureCount).padStart(5, "0")}`),
+        escapeCell(formattedDate),
+        escapeCell(line.accountCode),
+        escapeCell(line.accountName),
+        escapeCell(compAuxNum),
+        escapeCell(tx.partnerName),
+        escapeCell(tx.pieceNumber),
+        escapeCell(formattedDate),
+        escapeCell(line.description),
+        escapeCell(line.debit > 0 ? line.debit.toFixed(2).replace(".", ",") : "0,00"),
+        escapeCell(line.credit > 0 ? line.credit.toFixed(2).replace(".", ",") : "0,00"),
+        escapeCell(line.lettrage || ""),
+        escapeCell(line.lettrage ? formattedDate : ""),
+        escapeCell(formattedDate),
+        escapeCell(montantDeviseStr),
+        escapeCell(ideviseStr),
+      ];
+
+      rows.push(row.join(delimiter));
+    });
+    ecritureCount++;
+  });
+
+  // Prepend UTF-8 BOM for instant Excel and tax software UTF-8 decoding
+  return "\uFEFF" + rows.join("\r\n");
 }
 
 export interface GrandLivreAccount {

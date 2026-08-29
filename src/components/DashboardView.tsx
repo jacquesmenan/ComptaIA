@@ -775,7 +775,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <button
               type="button"
-              onClick={() => onNavigateTab("journal")}
+              onClick={() => handleNavigate("journal")}
               className="text-xs text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-1 cursor-pointer"
             >
               <span>Voir le Grand Livre</span>
