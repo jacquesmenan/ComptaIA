@@ -29,6 +29,21 @@ import {
   detectAccountingAnomalies,
 } from "./lib/accountingEngine";
 import { convertInvoiceToJournalTransaction } from "./lib/invoicingEngine";
+import {
+  saveCompanyToFirestore,
+  saveTransactionToFirestore,
+  deleteTransactionFromFirestore,
+  saveInvoiceToFirestore,
+  deleteInvoiceFromFirestore,
+  saveBankFeedToFirestore,
+  saveAlertSettingsToFirestore,
+  subscribeToCompany,
+  subscribeToTransactions,
+  subscribeToInvoices,
+  subscribeToBankFeed,
+  subscribeToAlertSettings,
+  seedFirestoreIfEmpty,
+} from "./lib/firebase";
 import { Smartphone, Monitor } from "lucide-react";
 
 export default function App() {
@@ -36,6 +51,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [journalSearchFilter, setJournalSearchFilter] = useState<string>("");
   const [journalCodeFilter, setJournalCodeFilter] = useState<string>("ALL");
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<"synced" | "syncing" | "offline">("syncing");
 
   const [company, setCompany] = useState<CompanyProfile>(() => {
     const saved = localStorage.getItem("compta_company");
@@ -66,9 +82,73 @@ export default function App() {
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [isMobileSimulator, setIsMobileSimulator] = useState(false);
 
-  // Save changes to LocalStorage
+  // Firestore Sync & Seed
+  useEffect(() => {
+    let unsubComp: () => void = () => {};
+    let unsubTx: () => void = () => {};
+    let unsubInv: () => void = () => {};
+    let unsubBnk: () => void = () => {};
+    let unsubAlert: () => void = () => {};
+
+    const initCloudDb = async () => {
+      try {
+        setCloudSyncStatus("syncing");
+        await seedFirestoreIfEmpty(
+          sampleCompany,
+          sampleTransactions,
+          sampleInvoices,
+          sampleBankFeed,
+          defaultAlertSettings
+        );
+
+        unsubComp = subscribeToCompany((cloudComp) => {
+          setCompany((prev) => ({ ...prev, ...cloudComp }));
+        });
+
+        unsubTx = subscribeToTransactions((cloudTxs) => {
+          if (cloudTxs.length > 0) {
+            setTransactions(cloudTxs);
+          }
+        });
+
+        unsubInv = subscribeToInvoices((cloudInvs) => {
+          if (cloudInvs.length > 0) {
+            setInvoices(cloudInvs);
+          }
+        });
+
+        unsubBnk = subscribeToBankFeed((cloudBnk) => {
+          if (cloudBnk.length > 0) {
+            setBankFeed(cloudBnk);
+          }
+        });
+
+        unsubAlert = subscribeToAlertSettings((cloudAlert) => {
+          setAlertSettings((prev) => ({ ...prev, ...cloudAlert }));
+        });
+
+        setCloudSyncStatus("synced");
+      } catch (err) {
+        console.warn("Firestore sync offline fallback:", err);
+        setCloudSyncStatus("offline");
+      }
+    };
+
+    initCloudDb();
+
+    return () => {
+      unsubComp();
+      unsubTx();
+      unsubInv();
+      unsubBnk();
+      unsubAlert();
+    };
+  }, []);
+
+  // Save changes to LocalStorage & Firestore
   useEffect(() => {
     localStorage.setItem("compta_company", JSON.stringify(company));
+    saveCompanyToFirestore(company);
   }, [company]);
 
   useEffect(() => {
@@ -81,10 +161,12 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem("compta_bankfeed", JSON.stringify(bankFeed));
+    saveBankFeedToFirestore(bankFeed);
   }, [bankFeed]);
 
   useEffect(() => {
     localStorage.setItem("compta_alert_settings", JSON.stringify(alertSettings));
+    saveAlertSettingsToFirestore(alertSettings);
   }, [alertSettings]);
 
   // Dynamic calculations
@@ -99,10 +181,12 @@ export default function App() {
   // Handlers
   const handleAddTransaction = (newTx: JournalTransaction) => {
     setTransactions((prev) => [newTx, ...prev]);
+    saveTransactionToFirestore(newTx);
   };
 
   const handleDeleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
+    deleteTransactionFromFirestore(id);
   };
 
   const handleSaveInvoice = (savedInvoice: ClientInvoice) => {
@@ -115,28 +199,31 @@ export default function App() {
       }
       return [savedInvoice, ...prev];
     });
+    saveInvoiceToFirestore(savedInvoice);
   };
 
   const handleDeleteInvoice = (id: string) => {
     setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+    deleteInvoiceFromFirestore(id);
   };
 
   const handleBookInvoiceToJournal = (invoice: ClientInvoice) => {
     const newTx = convertInvoiceToJournalTransaction(invoice, company);
     // Add transaction to journal
     setTransactions((prev) => [newTx, ...prev]);
+    saveTransactionToFirestore(newTx);
+
     // Mark invoice as booked
+    const updatedInvoice: ClientInvoice = {
+      ...invoice,
+      isBookedInJournal: true,
+      journalTransactionId: newTx.id,
+    };
+
     setInvoices((prev) =>
-      prev.map((inv) =>
-        inv.id === invoice.id
-          ? {
-              ...inv,
-              isBookedInJournal: true,
-              journalTransactionId: newTx.id,
-            }
-          : inv
-      )
+      prev.map((inv) => (inv.id === invoice.id ? updatedInvoice : inv))
     );
+    saveInvoiceToFirestore(updatedInvoice);
   };
 
   const handleNavigateToJournalWithSearch = (search: string, journalCode = "VE") => {
@@ -165,6 +252,7 @@ export default function App() {
         isBalanced={isBalanced}
         isMobileSimulator={isMobileSimulator}
         setIsMobileSimulator={setIsMobileSimulator}
+        cloudSyncStatus={cloudSyncStatus}
         onOpenMobileGuide={() => setIsMobileModalOpen(true)}
         onOpenStoreGuide={() => setIsMobileModalOpen(true)}
         onOpenAlertSettings={() => setIsAlertModalOpen(true)}

@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Company": {
+      "collection": "companies",
+      "fields": {
+        "name": { "type": "string", "required": true },
+        "legalForm": { "type": "string", "required": false },
+        "siren": { "type": "string", "required": false },
+        "vatNumber": { "type": "string", "required": false },
+        "accountingStandard": { "type": "string", "required": true },
+        "currency": { "type": "string", "required": true },
+        "vatRegime": { "type": "string", "required": true },
+        "fiscalYearStart": { "type": "string", "required": true },
+        "fiscalYearEnd": { "type": "string", "required": true },
+        "initialCash": { "type": "number", "required": true },
+        "updatedAt": { "type": "string", "required": false }
+      }
+    },
+    "Transaction": {
+      "collection": "transactions",
+      "fields": {
+        "pieceNumber": { "type": "string", "required": true },
+        "date": { "type": "string", "required": true },
+        "dueDate": { "type": "string", "required": false },
+        "journalCode": { "type": "string", "required": true },
+        "partnerName": { "type": "string", "required": true },
+        "documentType": { "type": "string", "required": true },
+        "amountHT": { "type": "number", "required": true },
+        "amountTVA": { "type": "number", "required": true },
+        "amountTTC": { "type": "number", "required": true },
+        "vatRate": { "type": "number", "required": true },
+        "status": { "type": "string", "required": true },
+        "lines": { "type": "array", "required": true },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "Invoice": {
+      "collection": "invoices",
+      "fields": {
+        "number": { "type": "string", "required": true },
+        "type": { "type": "string", "required": true },
+        "date": { "type": "string", "required": true },
+        "dueDate": { "type": "string", "required": true },
+        "client": { "type": "object", "required": true },
+        "currency": { "type": "string", "required": true },
+        "items": { "type": "array", "required": true },
+        "totalHT": { "type": "number", "required": true },
+        "totalTVA": { "type": "number", "required": true },
+        "totalTTC": { "type": "number", "required": true },
+        "status": { "type": "string", "required": true },
+        "isBookedInJournal": { "type": "boolean", "required": true },
+        "createdAt": { "type": "string", "required": true }
+      }
+    },
+    "BankItem": {
+      "collection": "bankFeed",
+      "fields": {
+        "date": { "type": "string", "required": true },
+        "description": { "type": "string", "required": true },
+        "amount": { "type": "number", "required": true },
+        "category": { "type": "string", "required": true },
+        "status": { "type": "string", "required": true }
+      }
+    }
+  }
+}

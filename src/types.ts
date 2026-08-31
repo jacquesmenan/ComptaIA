@@ -243,6 +243,13 @@ export interface CompanyProfile {
   accountingStandard: AccountingStandard;
   currency: CurrencyCode | string; // e.g. "EUR", "XOF", "USD", "€", "FCFA"
   vatRegime: "REEL_NORMAL" | "REEL_SIMPLIFIE" | "FRANCHISE_EN_BASE";
+  taxRegime?: string;
+  nafCode?: string;
+  activity?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+  country?: string;
   fiscalYearStart: string; // MM-DD
   fiscalYearEnd: string;
   initialCash: number;
@@ -265,6 +272,7 @@ export interface FinancialKPIs {
   resultatNet: number;
   tresorerieActuelle: number;
   bfr: number; // Besoin en Fonds de Roulement
+  bfrEstime?: number;
   dsoDays: number; // Days Sales Outstanding
   runwayMonths: number;
   tvaCollectee: number;

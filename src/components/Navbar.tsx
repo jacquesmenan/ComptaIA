@@ -15,6 +15,8 @@ import {
   Bell,
   Sliders,
   FileText,
+  Cloud,
+  Database,
 } from "lucide-react";
 import { AccountingStandard, CompanyProfile } from "../types";
 
@@ -30,6 +32,7 @@ interface NavbarProps {
   onOpenAlertSettings?: () => void;
   isMobileSimulator?: boolean;
   setIsMobileSimulator?: (val: boolean) => void;
+  cloudSyncStatus?: "synced" | "syncing" | "offline";
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -44,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAlertSettings,
   isMobileSimulator = false,
   setIsMobileSimulator,
+  cloudSyncStatus = "synced",
 }) => {
   const handleTabClick = (tabId: string) => {
     if (typeof setActiveTab === "function") {
@@ -89,6 +93,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
               <span>Moteur Autonome IA Actif (Gemini 3.7 Flash)</span>
             </span>
+            <span className="text-slate-500">•</span>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 text-sky-400 font-medium text-[11px] bg-sky-950/60 border border-sky-800/60 px-2 py-0.5 rounded">
+                <Database className="w-3 h-3 text-sky-400" />
+                <span>Base Cloud (europe-west2) :</span>
+                {cloudSyncStatus === "synced" && (
+                  <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Sync
+                  </span>
+                )}
+                {cloudSyncStatus === "syncing" && (
+                  <span className="text-amber-400 font-bold">Syncing...</span>
+                )}
+                {cloudSyncStatus === "offline" && (
+                  <span className="text-slate-400">Hors ligne</span>
+                )}
+              </span>
+            </div>
             <span className="text-slate-500">•</span>
             <div className="flex items-center gap-1.5">
               {isBalanced ? (

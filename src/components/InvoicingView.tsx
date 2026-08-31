@@ -362,7 +362,7 @@ export const InvoicingView: React.FC<InvoicingViewProps> = ({
           totalPaidTTC += inv.totalTTC;
         } else if (inv.status !== "CANCELLED") {
           totalPendingTTC += inv.totalTTC;
-          if (inv.dueDate < todayStr && inv.status !== "PAID") {
+          if (inv.dueDate < todayStr) {
             totalOverdueTTC += inv.totalTTC;
           }
         }
