@@ -218,14 +218,23 @@ export function generateLocalAdvisorReply(
     queryLower.includes("contrôle") ||
     queryLower.includes("controle") ||
     queryLower.includes("grand livre") ||
-    queryLower.includes("balance")
+    queryLower.includes("balance") ||
+    queryLower.includes("anomalie")
   ) {
+    const anomaliesList = context?.anomalies || [];
+    const ledgerAudit = context?.ledgerAudit || {};
+
+    const anomaliesSection = anomaliesList.length > 0
+      ? `\n\n**⚠️ Anomalies & Points de Vigilance Détectés (${anomaliesList.length}) :**\n` +
+        anomaliesList.slice(0, 3).map((a: any, idx: number) => `${idx + 1}. **${a.title || a.type}** (${a.severity === 'HIGH' ? 'Critique' : 'Modéré'}) : ${a.description} - *Action : ${a.recommendation || 'À régulariser'}*`).join("\n")
+      : "\n\n**✅ Audit du Journal :** Aucune anomalie critique détectée. Toutes les écritures sont équilibrées (Débit = Crédit).";
+
     return `### 🛡️ Audit de Conformité Comptable & Contrôle Fiscal (${standard})
 
 **1. Points de Contrôle Automatisés :**
-- **Équilibre de la Partie Double :** Débit total = Crédit total (Écart strict : **0,00 €**).
+- **Équilibre de la Partie Double :** Débits totaux (${(ledgerAudit.totalDebits || 0).toLocaleString("fr-FR")} ${currency}) vs Crédits (${(ledgerAudit.totalCredits || 0).toLocaleString("fr-FR")} ${currency}) — Écart : **${(ledgerAudit.balanceDifference || 0).toFixed(2)} ${currency}**.
 - **Numérotation Séquentielle :** Continuité chronologique des pièces dans chaque journal (Achats, Ventes, Banque, OD).
-- **Pointage des Tiers :** Les comptes \`401\` (Fournisseurs) et \`411\` (Clients) sont prêts pour le lettrage.
+- **Pointage des Tiers :** Les comptes \`401\` (Fournisseurs) et \`411\` (Clients) sont prêts pour le lettrage.${anomaliesSection}
 
 **2. Fichier des Écritures Comptables (FEC) :**
 - Structure 18 champs conforme à l'article A.47 A-1 du Livre des Procédures Fiscales (LPF).

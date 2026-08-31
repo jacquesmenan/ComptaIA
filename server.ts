@@ -629,19 +629,21 @@ app.post("/api/gemini/advisor", async (req, res) => {
       });
     }
 
-    const systemPrompt = `Tu es l'Expert-Comptable Diplômé, Auditeur Fiscal et Directeur Financier (DAF) IA autonome de l'entreprise.
-Tu as accès à l'état comptable et financier en temps réel de l'entreprise.
-Norme comptable en vigueur : ${accountingStandard} (PCG France ou SYSCOHADA Espace OHADA / UEMOA / CEMAC).
+    const systemPrompt = `Tu es l'Expert-Comptable Diplômé, Auditeur Fiscal et Directeur Financier (DAF) IA autonome de l'entreprise "${companyContext?.company?.name || 'Entreprise'}".
+Tu disposes du CONTEXTE COMPTABLE COMPLET ET EN TEMPS RÉEL de l'entreprise :
+- Profil entreprise : ${companyContext?.company?.name || ''} (SIRET: ${companyContext?.company?.siret || 'N/A'}, Régime TVA: ${companyContext?.company?.vatRegime || 'Réel normal'}, Activité: ${companyContext?.company?.activity || 'Conseil/Services'})
+- Norme comptable en vigueur : ${accountingStandard} (PCG France ou SYSCOHADA Espace OHADA / UEMOA / CEMAC)
+- Devise principale : ${companyContext?.company?.currency || 'EUR'}
 
-Données et ratios de l'entreprise en temps réel :
+CONTEXTE FINANCIER & COMPTABLE DÉTAILLÉ EN DIRECT :
 ${JSON.stringify(companyContext || {}, null, 2)}
 
-Tes règles de réponse :
-1. Réponds de façon précise, bienveillante, pédagogique et directement actionnable à la préoccupation ou question de l'utilisateur.
-2. Couvre tous les aspects de sa demande : comptabilité, fiscalité, facturation, trésorerie, déductions de charges, salaires, devis, TVA, amortissements, forme juridique, conformité FEC, gestion des impayés, etc.
-3. Quand pertinent, cite les numéros de comptes comptables du plan de compte (${accountingStandard}) et donne des exemples de schémas d'écriture débit/crédit.
-4. Structure toujours ta réponse avec un formatage Markdown soigné (titres, puces, gras, encadrés, tableaux).
-5. Réponds en français clair et professionnel.`;
+Directives d'excellence pour l'analyse DAF & Expert-Comptable :
+1. ANALYSE PERSONNALISÉE & CHIFFRÉE : Utilise et cite explicitement les vrais chiffres de l'entreprise fournis ci-dessus (Chiffre d'Affaires, Trésorerie disponible, Résultat Net, TVA nette due ou crédit, BFR, créances clients 411, dettes fournisseurs 401, solde de banque 512).
+2. DÉTECTION ET VIGILANCE SUR LES ANOMALIES : Si des anomalies ou alertes de conformité sont présentes dans 'anomalies' ou 'ledgerAudit', signale-les avec clarté et donne la démarche exacte de correction comptable.
+3. PRÉCISION COMPTABLE : Cite toujours les numéros et libellés de comptes exacts du plan comptable (${accountingStandard}) et les schémas d'écriture débit/crédit concrets quand la question porte sur une opération ou une charge.
+4. EXPERTISE FISCALE & JURIDIQUE : Explique les règles fiscales applicables (déductibilité des charges, TVA collectée/déductible/autoliquidée, acomptes et taux d'IS, mentions obligatoires de facturation, seuils fiscaux, arbitrage salaire/dividendes).
+5. FORMATAGE SOIGNÉ : Rédige en français professionnel, chaleureux, pédagogue et très structuré en Markdown (titres ###, listes à puces, mise en gras des montants clés, tableaux récapitulatifs, encadrés conseils).`;
 
     const historyDialogue = Array.isArray(messages) && messages.length > 1
       ? messages.slice(-5).map((m: any) => `${m.role === 'assistant' || m.sender === 'ai' ? 'Assistant DAF' : 'Utilisateur'}: ${m.content || m.text || ''}`).join("\n\n")

@@ -174,6 +174,111 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
     if (!textToSend) setInputMessage("");
     setIsLoading(true);
 
+    // Build comprehensive financial and accounting context
+    const totalDebits = transactions.reduce((sum, t) => sum + (t.lines?.reduce((ls, l) => ls + (Number(l.debit) || 0), 0) || 0), 0);
+    const totalCredits = transactions.reduce((sum, t) => sum + (t.lines?.reduce((ls, l) => ls + (Number(l.credit) || 0), 0) || 0), 0);
+
+    // Group balances by main account
+    const accountMap: Record<string, { code: string; name: string; debit: number; credit: number; balance: number }> = {};
+    transactions.forEach((t) => {
+      t.lines?.forEach((l) => {
+        if (!accountMap[l.accountCode]) {
+          accountMap[l.accountCode] = {
+            code: l.accountCode,
+            name: l.accountName || l.accountCode,
+            debit: 0,
+            credit: 0,
+            balance: 0,
+          };
+        }
+        accountMap[l.accountCode].debit += Number(l.debit) || 0;
+        accountMap[l.accountCode].credit += Number(l.credit) || 0;
+        accountMap[l.accountCode].balance = accountMap[l.accountCode].debit - accountMap[l.accountCode].credit;
+      });
+    });
+
+    const topAccounts = Object.values(accountMap)
+      .sort((a, b) => (b.debit + b.credit) - (a.debit + a.credit))
+      .slice(0, 20);
+
+    // Journal breakdown
+    const journalBreakdown: Record<string, { count: number; totalDebit: number; totalCredit: number }> = {};
+    transactions.forEach((t) => {
+      const code = t.journalCode || "OD";
+      if (!journalBreakdown[code]) {
+        journalBreakdown[code] = { count: 0, totalDebit: 0, totalCredit: 0 };
+      }
+      journalBreakdown[code].count += 1;
+      t.lines?.forEach((l) => {
+        journalBreakdown[code].totalDebit += Number(l.debit) || 0;
+        journalBreakdown[code].totalCredit += Number(l.credit) || 0;
+      });
+    });
+
+    const fullFinancialContext = {
+      company: {
+        name: company.name,
+        siren: company.siren,
+        currency: company.currency,
+        accountingStandard: company.accountingStandard,
+        vatRegime: company.vatRegime,
+        taxRegime: company.taxRegime,
+        nafCode: company.nafCode,
+        activity: company.activity,
+        fiscalYearStart: company.fiscalYearStart,
+        fiscalYearEnd: company.fiscalYearEnd,
+      },
+      kpis: {
+        ...kpis,
+        chiffreAffaires: kpis.chiffreAffaires,
+        margeBrutePct: kpis.margeBrutePct,
+        tresorerieActuelle: kpis.tresorerieActuelle,
+        resultatNet: kpis.resultatNet,
+        ebe: kpis.ebe,
+        bfr: kpis.bfr,
+        dsoDays: kpis.dsoDays,
+        runwayMonths: kpis.runwayMonths,
+        tvaCollectee: kpis.tvaCollectee,
+        tvaDeductible: kpis.tvaDeductible,
+        tvaNetDue: kpis.tvaNetDue,
+        activeAccountsReceivable: kpis.activeAccountsReceivable,
+        activeAccountsPayable: kpis.activeAccountsPayable,
+      },
+      ledgerAudit: {
+        totalTransactionsCount: transactions.length,
+        totalDebits: Math.round(totalDebits * 100) / 100,
+        totalCredits: Math.round(totalCredits * 100) / 100,
+        isDoubleEntryBalanced: Math.abs(totalDebits - totalCredits) < 0.01,
+        balanceDifference: Math.round(Math.abs(totalDebits - totalCredits) * 100) / 100,
+        journalBreakdown,
+        topAccountsSummary: topAccounts,
+      },
+      anomalies: anomalies.map((a) => ({
+        id: a.id,
+        type: a.type,
+        severity: a.severity,
+        title: a.title,
+        description: a.description,
+        recommendation: a.recommendation,
+        entryRef: a.entryRef || a.transactionId,
+      })),
+      recentTransactions: transactions.slice(0, 25).map((t) => ({
+        date: t.date,
+        journalCode: t.journalCode,
+        pieceNumber: t.pieceNumber,
+        partnerName: t.partnerName,
+        documentType: t.documentType,
+        totalDebit: t.lines?.reduce((s, l) => s + (Number(l.debit) || 0), 0) || 0,
+        lines: t.lines?.map((l) => ({
+          accountCode: l.accountCode,
+          accountName: l.accountName,
+          description: l.description,
+          debit: l.debit,
+          credit: l.credit,
+        })),
+      })),
+    };
+
     try {
       const response = await fetch("/api/gemini/advisor", {
         method: "POST",
@@ -183,12 +288,7 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
             role: m.sender === "user" ? "user" : "assistant",
             content: m.text,
           })),
-          companyContext: {
-            company,
-            kpis,
-            transactionsCount: transactions.length,
-            sampleEntries: transactions.slice(0, 10),
-          },
+          companyContext: fullFinancialContext,
           accountingStandard: company.accountingStandard,
         }),
       });
@@ -207,7 +307,7 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
       } else {
         const fallbackReply = generateLocalAdvisorReply(
           text,
-          { company, kpis, transactionsCount: transactions.length },
+          fullFinancialContext,
           company.accountingStandard
         );
         setMessages((prev) => [
@@ -224,7 +324,7 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
       console.error("AI Advisor error:", err);
       const contextualReply = generateLocalAdvisorReply(
         text,
-        { company, kpis, transactionsCount: transactions.length },
+        fullFinancialContext,
         company.accountingStandard
       );
       setMessages((prev) => [
@@ -539,8 +639,8 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
                 )}
               </div>
 
-              {/* Input Box */}
-              <div className="p-3 bg-slate-950 border-t border-slate-800">
+              {/* Input Box with quick prompt suggestions underneath */}
+              <div className="p-3 bg-slate-950 border-t border-slate-800 space-y-2.5">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -550,7 +650,7 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
                 >
                   <input
                     type="text"
-                    placeholder="Ex: Comment optimiser mes impôts ? Quelles mentions sur ma facture ? Comment déduire mes repas ?"
+                    placeholder="Ex: Quelle est ma marge actuelle ? Risque de découvert ? Comment déduire mes charges ?"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-500"
@@ -564,6 +664,32 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
                     <span className="hidden sm:inline text-xs">Envoyer</span>
                   </button>
                 </form>
+
+                {/* Quick Interactive Prompt Suggestions directly under input */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-thin pt-0.5">
+                  <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap flex items-center gap-1 pl-1">
+                    <Sparkles className="w-3 h-3 text-sky-400" />
+                    Suggestions :
+                  </span>
+                  {[
+                    "Quelle est ma marge actuelle ?",
+                    "Risque de découvert ?",
+                    "Analyse TVA",
+                    "Arbitrage salaire vs dividendes",
+                    "Audit de conformité & FEC",
+                    "Comment relancer mes impayés ?",
+                  ].map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => handleSendMessage(suggestion)}
+                      className="text-[11px] bg-slate-900/90 hover:bg-slate-800 hover:text-sky-300 text-slate-300 border border-slate-800 hover:border-sky-500/40 px-2.5 py-1 rounded-lg whitespace-nowrap transition cursor-pointer flex-shrink-0 disabled:opacity-50"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
