@@ -32,6 +32,7 @@ import {
 } from "../types";
 import { QuoteMarginCalculator } from "./QuoteMarginCalculator";
 import { CurrencyConverterModule } from "./CurrencyConverterModule";
+import { generateLocalAdvisorReply } from "../lib/financialAdvisorEngine";
 
 interface AiAdvisorViewProps {
   company: CompanyProfile;
@@ -203,15 +204,35 @@ Je suis là pour répondre à toutes vos préoccupations : **optimisation fiscal
             timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
           },
         ]);
+      } else {
+        const fallbackReply = generateLocalAdvisorReply(
+          text,
+          { company, kpis, transactionsCount: transactions.length },
+          company.accountingStandard
+        );
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            sender: "ai",
+            text: fallbackReply,
+            timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
       }
     } catch (err) {
       console.error("AI Advisor error:", err);
+      const contextualReply = generateLocalAdvisorReply(
+        text,
+        { company, kpis, transactionsCount: transactions.length },
+        company.accountingStandard
+      );
       setMessages((prev) => [
         ...prev,
         {
           id: `ai-${Date.now()}`,
           sender: "ai",
-          text: "Je reste à votre disposition. Vos flux comptables sont équilibrés et conformes.",
+          text: contextualReply,
           timestamp: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
